@@ -1,0 +1,12 @@
+log
+zips
+node_modules
+docker-compose.debug.yml
+.vscode/launch.json
+.vscode/tasks.json
+ecosystem.config.js
+.env
+.env.prod
+.env.test
+images/taskManagement
+service-google-account.json
