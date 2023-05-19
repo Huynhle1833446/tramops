@@ -13,7 +13,16 @@ async function hashPassword(password) {
     return await bcrypt.hash(password, saltRounds);
 }
 
+const generateOTP = () => {
+  // Implement your OTP generation logic here
+  // For example, you can use the 'otp-generator' library (npm install otp-generator)
+  const otpGenerator = require('otp-generator');
+  const otp = otpGenerator.generate(6, { digits: true, upperCase: false, specialChars: false });
+  return otp;
+};
+
 module.exports = {
   comparePasswords,
-  hashPassword
+  hashPassword,
+  generateOTP
 }

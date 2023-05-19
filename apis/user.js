@@ -26,9 +26,9 @@ module.exports = class APIUser {
     createUser = async (req) => {
         return new Promise(async (resolve, reject) => {
           try {
-              const { fullname, username, password } = req.body;
+              const { fullname, username, password, phone } = req.body;
               const hashedPassword = await hashPassword(password);
-              await this.tramDB.runQuery('INSERT INTO users (fullname, username, password) VALUES ($1, $2, $3) RETURNING id', [fullname, username, hashedPassword]);
+              await this.tramDB.runQuery('INSERT INTO users (fullname, username, password, phone, register_at) VALUES ($1, $2, $3, $4, $5) RETURNING id', [fullname, username, hashedPassword, phone, 'NOW()']);
 
               resolve({
                 msg: `Chúc mừng bạn đã tạo thông tin người dùng ${username} thành công`
