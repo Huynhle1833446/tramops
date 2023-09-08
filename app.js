@@ -7,11 +7,10 @@ app.use(express.json());
 app.use(cors())
 const bodyParser = require("body-parser");
 const routes = require ("./routes/index.js");
+const auth = require("./middleware/auth.js");
 
-// import middleware from "./middlewares.js"
 
-
-// app.use(middleware)
+app.use(auth)
 
 app.use("/api", routes);
 

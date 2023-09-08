@@ -26,9 +26,11 @@
     "jsonwebtoken": "^9.0.0",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.43",
-    "nodemon": "^2.0.22",
     "otp-generator": "^4.0.1",
     "pg": "^8.10.0",
     "twilio": "^4.11.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
