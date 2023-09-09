@@ -129,4 +129,20 @@ module.exports = class APIUser {
       }
     })
   }
+  
+  register = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const { fullname, username, password, phone } = req.body;
+        const hashedPassword = await hashPassword(password);
+        await this.tramDB.runQuery('INSERT INTO users (fullname, username, password, phone, register_at, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id', [fullname, username, hashedPassword, phone, 'NOW()', 'customer']);
+
+        resolve({
+          msg: `Chúc mừng bạn đã tạo thông tin người dùng ${username} thành công`
+        })
+      } catch (e) {
+          reject(e);
+      }
+    })
+  }
 }

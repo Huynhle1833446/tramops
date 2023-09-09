@@ -41,8 +41,8 @@ routes.post('/login', async (req, res) => {
 });
 
 routes.post('/register', async (req, res) => {
-  apiUser
-    .createUser(req)
+  apiAuth
+    .register(req)
     .then((data) => {
       res.status(200).send({ success: true, data: data });
     })
