@@ -133,10 +133,18 @@ module.exports = class APIUser {
   register = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const { fullname, username, password, phone } = req.body;
+        const { lastname, firstname, username, password, phone } = req.body;
         const hashedPassword = await hashPassword(password);
-        await this.tramDB.runQuery('INSERT INTO users (fullname, username, password, phone, register_at, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id', [fullname, username, hashedPassword, phone, 'NOW()', 'customer']);
-
+        
+        const queryCheck = `SELECT * FROM users WHERE username = $1`;
+        const check = await this.tramDB.runQuery(queryCheck, [username]);
+        if(check.rowCount > 0) reject('Tên đăng nhập đã tồn tại!')
+       
+        try {
+          await this.tramDB.runQuery('INSERT INTO users (last_name, first_name, username, password, phone, register_at, role) VALUES ($1, $2, $3, $4, $5, $6, $7)', [lastname, firstname, username, hashedPassword, phone, 'NOW()', 'customer']);
+        } catch (error) {
+          reject(error);
+        }
         resolve({
           msg: `Chúc mừng bạn đã tạo thông tin người dùng ${username} thành công`
         })
