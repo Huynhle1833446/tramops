@@ -18,7 +18,7 @@ module.exports = class APILocation {
         const total = getTotal.rows[0].total;
         valueOffset = valueOffset > total ? total : valueOffset;
 
-        const list = await this.tramDB.runQuery(`SELECT *
+        const list = await this.tramDB.runQuery(`SELECT locations.id as key, *
                   FROM locations
                   OFFSET $1 ROWS 
                   LIMIT $2; `, [valueOffset, pageSize]);
@@ -79,7 +79,7 @@ module.exports = class APILocation {
       const value = action === 'lock' ? 1 : 0;
       try {
         const queryUpdate = await this.tramDB.runQuery(`UPDATE locations SET is_locked = $1 WHERE id = $2 RETURNING locations.vi_name as name`, [value, id]);
-        
+
         resolve(queryUpdate.rows[0].name)
 
       } catch (e) {
