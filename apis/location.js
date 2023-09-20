@@ -72,4 +72,19 @@ module.exports = class APILocation {
       }
     });
   };
+
+  lockUnlock = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      const { action, id } = req.body;
+      const value = action === 'lock' ? 1 : 0;
+      try {
+        const queryUpdate = await this.tramDB.runQuery(`UPDATE locations SET is_locked = $1 WHERE id = $2 RETURNING locations.vi_name as name`, [value, id]);
+        
+        resolve(queryUpdate.rows[0].name)
+
+      } catch (e) {
+        reject(e);
+      }
+    });
+  };
 }
