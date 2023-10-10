@@ -25,7 +25,7 @@ module.exports = class APIUser {
         if(otpdb > 0) {
           await this.tramDB.runQuery('UPDATE otps SET otp = $1 WHERE phone = $2', [otp, phone])
         } else {
-          await this.tramDB.runQuery('INSERT INTO otps (phone, otp, created_at) VALUES ($1, $2, $3)', [phone, otp, "NOW()"]);
+          await this.tramDB.runQuery('INSERT INTO otps (phone, otp) VALUES ($1, $2)', [phone, otp]);
         }
 
         resolve(`Đã gửi OTP đến ${phone}`)
@@ -43,7 +43,7 @@ module.exports = class APIUser {
 
         if(!phone || !otp) reject('Vui lòng điền đủ số điện thoại hoặc mã OTP!')
 
-        const checkQuery = `SELECT * FROM otps WHERE phone = $1 AND otp = $2`;
+        const checkQuery = `SELECT id, phone, otp, created_at FROM otps WHERE phone = $1 AND otp = $2`;
         const rs = await this.tramDB.runQuery(checkQuery, [phone, otp])
         if(rs.rowCount === 0 ) reject('Mã OTP bạn nhập không đúng!')
 
@@ -51,7 +51,6 @@ module.exports = class APIUser {
           const otpdb = rs.rows[0];
 
           const createdAtMoment = moment(otpdb['created_at'], 'YYYY-MM-DD HH:mm:ss').tz("Asia/Ho_Chi_Minh");
-
           const minutesDiff = moment().diff(createdAtMoment, 'minutes');
 
           const expiryDuration = 5;
