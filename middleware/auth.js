@@ -2,7 +2,9 @@ const jwt = require('jsonwebtoken');
 
 function auth(req, res, next) {
   console.log("url", req.originalUrl)
-  if ( req.originalUrl != "/api/auth/login" && req.originalUrl != '/api/auth/register') {
+  const accessList = ['/api/auth/login', '/api/auth/register', '/api/auth/send-otp', '/api/auth/verify-otp'];
+  
+  if ( !accessList.includes(req.originalUrl) ) {
     const token = req.header('Authorization');
     if (!token) return res.status(401).send('Từ chối truy cập vì không cung cấp token.');
   
