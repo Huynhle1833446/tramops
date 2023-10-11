@@ -129,12 +129,37 @@ module.exports = class APIUser {
     })
   }
   
+  splitFullName(fullName) {
+    // Split the full name into an array of words
+    const words = fullName.split(' ');
+  
+    // Check if there are at least two words (first name and last name)
+    if (words.length >= 2) {
+      const lastname = words.pop(); // Remove and get the last word as the last name
+      const firstname = words.join(' '); // The remaining words are the first name
+  
+      return {
+        firstname: firstname,
+        lastname: lastname,
+      };
+    } else {
+      // If there are not enough words, consider the entire name as the first name
+      return {
+        firstname: fullName,
+        lastname: '',
+      };
+    }
+  }
+
   register = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const { lastname, firstname, username, password, phone } = req.body;
+        let { fullname, lastname, firstname, username, password, phone } = req.body;
         const hashedPassword = await hashPassword(password);
-        
+        if(fullname) {
+          lastname = this.splitFullName(fullname).lastname;
+          firstname = this.splitFullName(fullname).firstname;
+        }
         const queryCheck = `SELECT * FROM users WHERE username = $1`;
         const check = await this.tramDB.runQuery(queryCheck, [username]);
         if(check.rowCount > 0) reject('Tên đăng nhập đã tồn tại!')
