@@ -20,6 +20,7 @@ module.exports = class APILocation {
 
         const list = await this.tramDB.runQuery(`SELECT locations.id as key, *
                   FROM locations
+                  ORDER BY id desc
                   OFFSET $1 ROWS 
                   LIMIT $2; `, [valueOffset, pageSize]);
         if (list.rowCount > 0) {
@@ -87,4 +88,34 @@ module.exports = class APILocation {
       }
     });
   };
+
+  edit = async(req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const newLoc = {
+          vi_name: req.body.vi_name,
+          en_name: req.body.en_name,
+          x: req.body.x,
+          y: req.body.y,
+          z: req.body.z,
+          started_at: req.body.started_at,
+          closed_at: req.body.closed_at,
+          id: req.body.id
+        }
+        
+        const queryCheck = `SELECT * FROM locations WHERE id = $1`;
+        const check = await this.tramDB.runQuery(queryCheck, [newLoc.id]);
+
+        if (check.rowCount > 0) {
+          const queryUpdate = `UPDATE locations SET vi_name = $1, en_name = $2, x = $3, y = $4, z = $5, started_at = $6, closed_at = $7 WHERE id = $8 RETURNING id as key`;
+          const update = await this.tramDB.runQuery(queryUpdate, [newLoc.vi_name, newLoc.en_name, newLoc.x, newLoc.y, newLoc.z, newLoc.started_at, newLoc.closed_at, newLoc.id]);
+          resolve(update.rows[0]?.key || update.rows[0]?.id);
+        } else {
+          reject('Không tồn tại địa điểm này!')
+        }
+      } catch (error) {
+        reject(error);
+      }
+    })
+  }
 }

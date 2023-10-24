@@ -36,6 +36,16 @@ routes.post('/lockUnlock',  (req, res) => {
       res.status(400).send({ success: false, error: e });
     });
 });
+routes.post('/edit',  (req, res) => {
+  apiLocation
+    .edit(req)
+    .then((data) => {
+      res.status(200).send({ success: true, data: data });
+    })
+    .catch((e) => {
+      res.status(400).send({ success: false, error: e });
+    });
+});
 
 module.exports = routes
 
