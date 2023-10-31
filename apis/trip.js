@@ -129,7 +129,7 @@ module.exports = class APITrip {
           LEFT JOIN locations to_location ON stages.to_location_id = to_location.id
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
-  WHERE trips.created_at > $1 AND stages.from_location_id = $2 AND stages.to_location_id = $3
+  WHERE DATE(trips.created_at) = $1 AND stages.from_location_id = $2 AND stages.to_location_id = $3
  GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name`;
           const rs = await this.tramDB.runQuery(query, [created_at, from_location_id, to_location_id])
