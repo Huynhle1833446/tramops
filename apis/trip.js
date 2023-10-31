@@ -108,7 +108,7 @@ module.exports = class APITrip {
   getByParams = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const {created_at, from_location_id, to_location_id} = req.body;
+        const {started_at, from_location_id, to_location_id} = req.body;
 
         const query = `SELECT trips.id                                       as key,
         trips.status,
@@ -132,7 +132,7 @@ module.exports = class APITrip {
   WHERE DATE(trips.started_at) = $1 AND stages.from_location_id = $2 AND stages.to_location_id = $3
  GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name`;
-          const rs = await this.tramDB.runQuery(query, [created_at, from_location_id, to_location_id])
+          const rs = await this.tramDB.runQuery(query, [started_at, from_location_id, to_location_id])
 
           resolve(rs.rows)
       } catch (error) {
