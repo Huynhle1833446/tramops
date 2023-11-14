@@ -105,6 +105,39 @@ module.exports = class APITrip {
       }
     })
   }
+  getTripByDriver = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const userInfo = req.user;
+        const query = `SELECT trips.id                                       as key,
+        trips.status,
+        trips.started_at,
+        trips.count_slot                               as total_slot_trip,
+        trips.created_at,
+        stages.price                                   as price,
+        stages.created_at                              as stage_created_at,
+        CONCAT(users.first_name, ' ', users.last_name) as driver_name,
+        from_location.vi_name                          as from_location_name,
+        to_location.vi_name                            as to_location_name,
+        cars.name                                      as car_name,
+        cars.number_plate
+ FROM trips
+          LEFT JOIN stages ON trips.stage_id = stages.id
+          LEFT JOIN users ON trips.driver_id = users.id
+          LEFT JOIN locations from_location ON stages.from_location_id = from_location.id
+          LEFT JOIN locations to_location ON stages.to_location_id = to_location.id
+          LEFT JOIN cars ON users.car_id = cars.id
+          LEFT JOIN tickets ON tickets.trip_id = trips.id
+  WHERE trips.driver_id = $1
+ GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
+          cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name`;
+        const list = await this.tramDB.runQuery(query, [userInfo.id]);
+        resolve(list.rows || [])
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
   getByParams = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
