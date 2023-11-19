@@ -184,7 +184,7 @@ module.exports = class APITrip {
         const queryCheckTrip = `SELECT * FROM trips WHERE id = $1`;
         const checkTrip = await this.tramDB.runQuery(queryCheckTrip, [trip_id]);
         if(checkTrip.rows.length === 0) {
-          reject('Trip not found')
+          reject('Tuyến đi này không tồn tại!')
         }
         
         switch (status) {
