@@ -46,6 +46,17 @@ routes.post('/create',  (req, res) => {
     });
 });
 
+routes.post('/updateStatus',  (req, res) => {
+  apiTrip
+    .updateStatus(req)
+    .then((data) => {
+      res.status(200).send({ success: true, data: data });
+    })
+    .catch((e) => {
+      res.status(400).send({ success: false, error: e });
+    });
+});
+
 // routes.post('/lockUnlock',  (req, res) => {
 //   apiTrip
 //     .lockUnlock(req)
