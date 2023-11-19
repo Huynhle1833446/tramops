@@ -120,7 +120,9 @@ module.exports = class APITrip {
         from_location.vi_name                          as from_location_name,
         to_location.vi_name                            as to_location_name,
         cars.name                                      as car_name,
-        cars.number_plate
+        cars.number_plate,
+        count(tickets.id) as total_ticket,
+        sum(tickets.count_slot) as total_slot_ticket
  FROM trips
           LEFT JOIN stages ON trips.stage_id = stages.id
           LEFT JOIN users ON trips.driver_id = users.id
@@ -173,7 +175,41 @@ module.exports = class APITrip {
       }
     })
   }
+  updateStatus = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const {status, trip_id} = req.body;
+        const userInfo = req.user;
 
+        const queryCheckTrip = `SELECT * FROM trips WHERE id = $1`;
+        const checkTrip = await this.tramDB.runQuery(queryCheckTrip, [trip_id]);
+        if(checkTrip.rows.length === 0) {
+          reject('Trip not found')
+        }
+        
+        switch (status) {
+          case 'new':
+            await this.tramDB.runQuery(`UPDATE trips SET status = 'new', created_at=NOW(), started_at= NULL, finished_at= NULL  WHERE id = $1 `, [trip_id]);
+            break;
+          case 'in_progress':
+            await this.tramDB.runQuery(`UPDATE trips SET status = 'in_progress', started_at=NOW(), finished_at =NULL WHERE id = $1 `, [trip_id]);
+            break;
+          case 'finished':
+            await this.tramDB.runQuery(`UPDATE trips SET status = 'finished', finished_at=NOW() WHERE id = $1 `, [trip_id]);
+            break;
+          case 'expired':
+            await this.tramDB.runQuery(`UPDATE trips SET status = 'expired' WHERE id = $1 `, [trip_id]);
+            break;  
+          default:
+            reject('Trạng thái không hợp lệ!')
+            break;
+        }
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
   // lockUnlock = async (req) => {
   //   return new Promise(async (resolve, reject) => {
   //     const { action, id } = req.body;
