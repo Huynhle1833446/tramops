@@ -12,19 +12,20 @@ module.exports = class APITrip {
   create = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
-        let { stage_id, count_slot, started_at, driver_id } = req.body;
+        let { stageId, countSlot, driverId } = req.body;
+        console.log("🚀 ~ file: trip.js:16 ~ APITrip ~ returnnewPromise ~ stageId, countSlot, driverId:", stageId, countSlot, driverId)
         const userInfo = req.user;
 
         const queryCheck = `SELECT * FROM stages WHERE id = $1`;
-        const check = await this.tramDB.runQuery(queryCheck, [stage_id]);
+        const check = await this.tramDB.runQuery(queryCheck, [stageId]);
         if (!check.rowCount) reject("Không tồn tại chặng xe này!")
 
         const queryCheckDriver = `SELECT * FROM users WHERE id = $1 and role = 'staff'`;
-        const checkDriver = await this.tramDB.runQuery(queryCheckDriver, [driver_id]);
+        const checkDriver = await this.tramDB.runQuery(queryCheckDriver, [driverId]);
         if (!checkDriver.rowCount) reject("Không tồn tại tài xế này!")
 
         else {
-          const trip = await this.tramDB.runQuery('INSERT INTO trips (stage_id, driver_id, started_at, count_slot) VALUES ($1, $2, $3, $4) RETURNING *', [stage_id, count_slot, started_at, driver_id]);
+          const trip = await this.tramDB.runQuery('INSERT INTO trips (stage_id, driver_id, count_slot) VALUES ($1, $2, $3) RETURNING *', [stageId, driverId, countSlot]);
           resolve(trip.rows[0])
         }
       } catch (e) {
@@ -45,6 +46,7 @@ module.exports = class APITrip {
         const list = await this.tramDB.runQuery(`SELECT trips.id                                       as key,
         trips.status,
         trips.started_at,
+        trips.finished_at,
         trips.count_slot                               as total_slot_trip,
         trips.created_at,
         stages.price                                   as price,
@@ -53,6 +55,8 @@ module.exports = class APITrip {
         from_location.vi_name                          as from_location_name,
         to_location.vi_name                            as to_location_name,
         cars.name                                      as car_name,
+        t.total_slot,
+        t.total_ticket,
         cars.number_plate
  FROM trips
           LEFT JOIN stages ON trips.stage_id = stages.id
@@ -61,27 +65,45 @@ module.exports = class APITrip {
           LEFT JOIN locations to_location ON stages.to_location_id = to_location.id
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
+          LEFT JOIN (SELECT tc.trip_id, sum(count_slot) as total_slot, count(id) as total_ticket  FROM tickets tc GROUP BY tc.trip_id) t ON t.trip_id = trips.id
  GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
-          cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name
+          cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name, t.total_slot,
+        t.total_ticket
                   OFFSET $1 ROWS 
                   LIMIT $2; `, [valueOffset, pageSize]);
 
-        const checkTicketQuery = `SELECT sum(count_slot) as total_slot, count(id) as total_ticket FROM tickets WHERE trip_id = $1`;
-        const checkTicket = await this.tramDB.runQuery(checkTicketQuery, [list.rows[0].key]);
+        // const checkTicketQuery = `SELECT sum(count_slot) as total_slot, count(id) as total_ticket FROM tickets WHERE trip_id = $1`;
+        // const checkTicket = await this.tramDB.runQuery(checkTicketQuery, [list.rows[0].key]);
 
-        const total_ticket_slot = checkTicket.rows[0].total_ticket;
-        const total_ticket = checkTicket.rows[0].total_slot;
+        // const total_ticket_slot = checkTicket.rows[0].total_ticket;
+        // const total_ticket = checkTicket.rows[0].total_slot;
+
+        const queryStage = `SELECT s.id as key, fl.vi_name as from_location_name, tl.vi_name as to_location_name ,*
+        FROM stages s LEFT JOIN locations fl ON s.from_location_id = fl.id
+                      LEFT JOIN locations tl ON s.to_location_id = tl.id
+                      WHERE s.is_locked = 0
+        ORDER BY s.id desc `;
+        const stageData = await this.tramDB.runQuery(queryStage);
+
+        const queryDriver = `select u.id, car_id, username, first_name, last_name
+        from users u left join public.cars c on c.id = u.car_id
+        where role = 'staff' and u.is_locked = 0 and first_name is not null and last_name is not null and car_id is not null and c.is_locked = 0 ;
+        `;
+        const driverData = await this.tramDB.runQuery(queryDriver);
         resolve({
           data: list.rows.map(item => {
             return {
               ...item,
-              started_at: moment(item.started_at).format('DD/MM/YYYY HH:mm:ss'),
+              finished_at: item.finished_at ? moment(item.finished_at).format('DD/MM/YYYY HH:mm:ss') : 'Chưa có',
+              started_at: item.started_at ? moment(item.started_at).format('DD/MM/YYYY HH:mm:ss') : "Chưa có",
               created_at: moment(item.created_at).format('DD/MM/YYYY HH:mm:ss'),
-              total_ticket_slot: Number(total_ticket_slot) || 0,
-              total_ticket: Number(total_ticket) || 0,
-              slot_left: item.total_slot_trip - total_ticket_slot
+              total_ticket_slot: Number(item.total_slot) || 0,
+              total_ticket: Number(item.total_ticket) || 0,
+              slot_left: item.total_slot_trip - item.total_slot
             }
           }),
+          stageData: stageData.rows || [],
+          driverData: driverData.rows || [],
           pagination: { current, pageSize, total },
         })
       } catch (e) {

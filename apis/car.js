@@ -107,4 +107,28 @@ module.exports = class APIUser {
       }
     })
   } 
+  edit = async(req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const newCar = {
+          name: req.body.name,
+          number_plate: req.body.number_plate,
+          id: req.body.id
+        }
+        
+        const queryCheck = `SELECT * FROM cars WHERE id = $1`;
+        const check = await this.tramDB.runQuery(queryCheck, [newCar.id]);
+
+        if (check.rowCount > 0) {
+          const queryUpdate = `UPDATE cars SET name = $1, number_plate = $2 WHERE id = $3 RETURNING id as key`;
+          const update = await this.tramDB.runQuery(queryUpdate, [newCar.name, newCar.number_plate, newCar.id]);
+          resolve(update.rows[0]?.key || update.rows[0]?.id);
+        } else {
+          reject('Không tồn tại xe này!')
+        }
+      } catch (error) {
+        reject(error);
+      }
+    })
+  }
 }
