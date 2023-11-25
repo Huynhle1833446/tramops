@@ -56,6 +56,26 @@ routes.post('/updateStatus',  (req, res) => {
       res.status(400).send({ success: false, error: e });
     });
 });
+routes.post('/edit',  (req, res) => {
+  apiTrip
+    .edit(req)
+    .then((data) => {
+      res.status(200).send({ success: true, data: data });
+    })
+    .catch((e) => {
+      res.status(400).send({ success: false, error: e });
+    });
+});
+routes.post('/changeDriver',  (req, res) => {
+  apiTrip
+    .changeDriver(req)
+    .then((data) => {
+      res.status(200).send({ success: true, data: data });
+    })
+    .catch((e) => {
+      res.status(400).send({ success: false, error: e });
+    });
+});
 
 // routes.post('/lockUnlock',  (req, res) => {
 //   apiTrip

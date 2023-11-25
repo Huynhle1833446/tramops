@@ -14,6 +14,16 @@ routes.post('/', async (req, res) => {
       res.status(400).send({ success: false, error: e });
     });
 });
+routes.post('/top', async (req, res) => {
+  apiStage
+    .top(req)
+    .then((data) => {
+      res.status(200).send({ success: true, data: data });
+    })
+    .catch((e) => {
+      res.status(400).send({ success: false, error: e });
+    });
+});
 
 routes.post('/create',  (req, res) => {
   apiStage

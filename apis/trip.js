@@ -26,7 +26,36 @@ module.exports = class APITrip {
 
         else {
           const trip = await this.tramDB.runQuery('INSERT INTO trips (stage_id, driver_id, count_slot) VALUES ($1, $2, $3) RETURNING *', [stageId, driverId, countSlot]);
-          resolve(trip.rows[0])
+          resolve({msg: `Đã thêm thành công chuyến xe #${trip.rows[0].id}`});
+        }
+      } catch (e) {
+        reject(e);
+      }
+    });
+  };
+
+  edit = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let { stageId, countSlot, driverId, id } = req.body;
+   
+        const userInfo = req.user;
+
+        const queryCheckTrip = `SELECT * FROM trips WHERE id = $1`;
+        const checkTrip = await this.tramDB.runQuery(queryCheckTrip, [id]);
+        if (!checkTrip.rowCount) reject("Không tồn tại chuyến xe này!")
+
+        const queryCheck = `SELECT * FROM stages WHERE id = $1`;
+        const check = await this.tramDB.runQuery(queryCheck, [stageId]);
+        if (!check.rowCount) reject("Không tồn tại chặng xe này!")
+
+        const queryCheckDriver = `SELECT * FROM users WHERE id = $1 and role = 'staff'`;
+        const checkDriver = await this.tramDB.runQuery(queryCheckDriver, [driverId]);
+        if (!checkDriver.rowCount) reject("Không tồn tại tài xế này!")
+
+        else {
+          const trip = await this.tramDB.runQuery('UPDATE trips SET stage_id = $1, driver_id = $2, count_slot = $3 WHERE id = $4 RETURNING *', [stageId, driverId, countSlot, id]);
+          resolve({msg: `Đã cập nhật thành công chuyến xe #${trip.rows[0].id}`});
         }
       } catch (e) {
         reject(e);
@@ -50,8 +79,10 @@ module.exports = class APITrip {
         trips.count_slot                               as total_slot_trip,
         trips.created_at,
         stages.price                                   as price,
+        stages.id as stage_id,
         stages.created_at                              as stage_created_at,
         CONCAT(users.first_name, ' ', users.last_name) as driver_name,
+        users.id                                       as driver_id,
         from_location.vi_name                          as from_location_name,
         to_location.vi_name                            as to_location_name,
         cars.name                                      as car_name,
@@ -66,9 +97,9 @@ module.exports = class APITrip {
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
           LEFT JOIN (SELECT tc.trip_id, sum(count_slot) as total_slot, count(id) as total_ticket  FROM tickets tc GROUP BY tc.trip_id) t ON t.trip_id = trips.id
- GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
+ GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,stages.id,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name, t.total_slot,
-        t.total_ticket
+        t.total_ticket, users.id
                   OFFSET $1 ROWS 
                   LIMIT $2; `, [valueOffset, pageSize]);
 
@@ -85,8 +116,8 @@ module.exports = class APITrip {
         ORDER BY s.id desc `;
         const stageData = await this.tramDB.runQuery(queryStage);
 
-        const queryDriver = `select u.id, car_id, username, first_name, last_name
-        from users u left join public.cars c on c.id = u.car_id
+        const queryDriver = `select c.name as car_name,u.id, car_id, username, first_name, last_name
+        from users u left join cars c on c.id = u.car_id
         where role = 'staff' and u.is_locked = 0 and first_name is not null and last_name is not null and car_id is not null and c.is_locked = 0 ;
         `;
         const driverData = await this.tramDB.runQuery(queryDriver);
@@ -227,6 +258,18 @@ module.exports = class APITrip {
             break;
         }
         resolve()
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+  changeDriver = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const {driver, trip} = req.body;
+        await this.tramDB.runQuery(`UPDATE trips SET driver_id = $1 WHERE id = $2`, [driver.id, trip.key]);
+        resolve('Cập nhật thành công tài xế cho chuyến đi !')
       } catch (error) {
         reject(error)
       }

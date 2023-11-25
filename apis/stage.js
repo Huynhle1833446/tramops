@@ -137,4 +137,24 @@ module.exports = class APIStage {
       }
     })
   } 
+
+  top = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const query = `select a.*, concat(l1.vi_name, ' - ',l2.vi_name) as name
+        from stages s  join (select stage_id, count(t.id) as total
+        from trips t
+        group by t.stage_id
+        order by total desc
+        LIMIT 10) a on s.id = a.stage_id
+        join locations l1 on l1.id = s.from_location_id
+        join locations l2 on l2.id = s.to_location_id;`
+        const rs = await this.tramDB.runQuery(query);
+
+        resolve(rs.rows)
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
 }

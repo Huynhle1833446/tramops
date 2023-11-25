@@ -95,4 +95,21 @@ module.exports = class APIUser {
       }
     });
   };
+  top = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const query = `select a.*, u.username, u.image, CONCAT(u.first_name, ' ', u.last_name) as name
+        from users u  join (select driver_id, count(t.id) as total
+        from trips t
+        group by t.driver_id
+        order by total desc
+        LIMIT 10) a on a.driver_id = u.id;`
+        const rs = await this.tramDB.runQuery(query);
+
+        resolve(rs.rows)
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
 }
