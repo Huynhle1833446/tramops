@@ -167,6 +167,7 @@ module.exports = class APITrip {
         trips.started_at,
         trips.count_slot                               as total_slot_trip,
         trips.created_at,
+        trips.finished_at
         stages.price                                   as price,
         stages.created_at                              as stage_created_at,
         CONCAT(users.first_name, ' ', users.last_name) as driver_name,
