@@ -14,7 +14,7 @@ module.exports = class APIUser {
       const { current, pageSize } = req.body;
       let valueOffset = (current - 1) * pageSize;
       try {
-        const getTotal = await this.tramDB.runQuery('SELECT COUNT(id) as total FROM users');
+        const getTotal = await this.tramDB.runQuery('SELECT COUNT(id) as total FROM users WHERE role != \'admin\'');
         const total = getTotal.rows[0].total;
         valueOffset = valueOffset > total ? total : valueOffset;
 

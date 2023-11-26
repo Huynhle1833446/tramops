@@ -75,7 +75,7 @@ module.exports = class APIUser {
         const { username, password } = req.body;
 
         if(!username || !password) reject('Vui lòng nhập đủ thông tin đăng nhập!')
-        const result = await this.tramDB.runQuery(`SELECT *, last_name || ' ' || first_name as fullname FROM users WHERE username = $1`, [username]);
+        const result = await this.tramDB.runQuery(`SELECT *, image as imgUrl, last_name || ' ' || first_name as fullname FROM users WHERE username = $1`, [username]);
 
         const user = result.rows[0];
         if (!user) reject('Sai thông tin người dùng !');
@@ -91,6 +91,7 @@ module.exports = class APIUser {
           msg: `Chúc mừng bạn đã đăng nhập thành công`,
           user: {
             ...user,
+            imgUrl: user.imgurl ? user.imgurl : null,
             token
           }
         })

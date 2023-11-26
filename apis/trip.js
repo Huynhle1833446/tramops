@@ -275,6 +275,22 @@ module.exports = class APITrip {
       }
     })
   }
+
+  balance = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+
+        const balance = await this.tramDB.runQuery(`select sum(price) as balance
+        from tickets tic join trips t on t.id = tic.trip_id
+            join stages s on s.id = t.stage_id
+        where t.status = 'finished'
+        `);
+        resolve(balance.rows[0].balance || 0)
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
   // lockUnlock = async (req) => {
   //   return new Promise(async (resolve, reject) => {
   //     const { action, id } = req.body;
