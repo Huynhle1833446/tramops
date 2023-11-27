@@ -12,8 +12,8 @@ module.exports = class APITrip {
   create = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
-        let { stageId, countSlot, driverId } = req.body;
-        console.log("🚀 ~ file: trip.js:16 ~ APITrip ~ returnnewPromise ~ stageId, countSlot, driverId:", stageId, countSlot, driverId)
+        let { stageId, countSlot, driverId, startTime } = req.body;
+
         const userInfo = req.user;
 
         const queryCheck = `SELECT * FROM stages WHERE id = $1`;
@@ -25,7 +25,7 @@ module.exports = class APITrip {
         if (!checkDriver.rowCount) reject("Không tồn tại tài xế này!")
 
         else {
-          const trip = await this.tramDB.runQuery('INSERT INTO trips (stage_id, driver_id, count_slot) VALUES ($1, $2, $3) RETURNING *', [stageId, driverId, countSlot]);
+          const trip = await this.tramDB.runQuery('INSERT INTO trips (stage_id, driver_id, count_slot, started_at) VALUES ($1, $2, $3, $4) RETURNING *', [stageId, driverId, countSlot, moment(startTime).format('YYYY-MM-DD HH:mm:ss')]);
           resolve({msg: `Đã thêm thành công chuyến xe #${trip.rows[0].id}`});
         }
       } catch (e) {
@@ -37,7 +37,7 @@ module.exports = class APITrip {
   edit = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
-        let { stageId, countSlot, driverId, id } = req.body;
+        let { stageId, countSlot, driverId, id, startTime } = req.body;
    
         const userInfo = req.user;
 
@@ -54,7 +54,7 @@ module.exports = class APITrip {
         if (!checkDriver.rowCount) reject("Không tồn tại tài xế này!")
 
         else {
-          const trip = await this.tramDB.runQuery('UPDATE trips SET stage_id = $1, driver_id = $2, count_slot = $3 WHERE id = $4 RETURNING *', [stageId, driverId, countSlot, id]);
+          const trip = await this.tramDB.runQuery('UPDATE trips SET stage_id = $1, driver_id = $2, count_slot = $3, started_at = $4 WHERE id = $5 RETURNING *', [stageId, driverId, countSlot, moment(startTime).format('YYYY-MM-DD HH:mm:ss'), id]);
           resolve({msg: `Đã cập nhật thành công chuyến xe #${trip.rows[0].id}`});
         }
       } catch (e) {
@@ -78,6 +78,7 @@ module.exports = class APITrip {
         trips.finished_at,
         trips.count_slot                               as total_slot_trip,
         trips.created_at,
+        trips.moved_at,
         stages.price                                   as price,
         stages.id as stage_id,
         stages.created_at                              as stage_created_at,
@@ -243,10 +244,10 @@ module.exports = class APITrip {
         
         switch (status) {
           case 'new':
-            await this.tramDB.runQuery(`UPDATE trips SET status = 'new', created_at=NOW(), started_at= NULL, finished_at= NULL  WHERE id = $1 `, [trip_id]);
+            await this.tramDB.runQuery(`UPDATE trips SET status = 'new', created_at=NOW(), moved_at= NULL, finished_at= NULL  WHERE id = $1 `, [trip_id]);
             break;
           case 'in_progress':
-            await this.tramDB.runQuery(`UPDATE trips SET status = 'in_progress', started_at=NOW(), finished_at =NULL WHERE id = $1 `, [trip_id]);
+            await this.tramDB.runQuery(`UPDATE trips SET status = 'in_progress', moved_at=NOW(), finished_at =NULL WHERE id = $1 `, [trip_id]);
             break;
           case 'finished':
             await this.tramDB.runQuery(`UPDATE trips SET status = 'finished', finished_at=NOW() WHERE id = $1 `, [trip_id]);
