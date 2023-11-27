@@ -293,20 +293,39 @@ module.exports = class APITrip {
       }
     })
   }
-  // lockUnlock = async (req) => {
-  //   return new Promise(async (resolve, reject) => {
-  //     const { action, id } = req.body;
-  //     const value = action === 'lock' ? 1 : 0;
-  //     try {
-  //       const queryUpdate = await this.tramDB.runQuery(`UPDATE locations SET is_locked = $1 WHERE id = $2 RETURNING locations.vi_name as name`, [value, id]);
+  getCustomerInfoByTripId = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      const { trip_id } = req.body;
+      try {
+        const checkTrip = await this.tramDB.runQuery(`SELECT * FROM trips WHERE id = $1`, [trip_id]);
+        if(checkTrip.rows.length === 0) {
+          reject('Không tồn tại chuyến xe này!');
+        } else {
+          const queryCustomerInfo = `select users.username,
+          concat(users.first_name, ' ', users.last_name) as fullname,
+          users.phone,
+          users.image,
+           sum(tickets.count_slot) as slot_user_buy,
+           count(tickets.id) as ticket_user_buy,
+           tickets.trip_id
+   from trips
+            join tickets on trips.id = tickets.trip_id
+            join users on users.id = customer_id
+   where tickets.trip_id = $1  
+   GROUP BY users.id, tickets.trip_id;`
 
-  //       resolve(queryUpdate.rows[0].name)
+            const cusInfo = await this.tramDB.runQuery(queryCustomerInfo, [trip_id]);
+            resolve({
+              trip: checkTrip?.rows[0] || null,
+              customer: cusInfo?.rows || []
+            })
+        }
 
-  //     } catch (e) {
-  //       reject(e);
-  //     }
-  //   });
-  // };
+      } catch (e) {
+        reject(e);
+      }
+    });
+  };
 
   // edit = async (req) => {
   //   return new Promise(async (resolve, reject) => {

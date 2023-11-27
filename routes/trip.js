@@ -88,16 +88,17 @@ routes.post('/balance',  (req, res) => {
     });
 });
 
-// routes.post('/lockUnlock',  (req, res) => {
-//   apiTrip
-//     .lockUnlock(req)
-//     .then((data) => {
-//       res.status(200).send({ success: true, data: data });
-//     })
-//     .catch((e) => {
-//       res.status(400).send({ success: false, error: e });
-//     });
-// });
+
+routes.post('/customer/info',  (req, res) => {
+  apiTrip
+    .getCustomerInfoByTripId(req)
+    .then((data) => {
+      res.status(200).send({ success: true, data: data });
+    })
+    .catch((e) => {
+      res.status(400).send({ success: false, error: e });
+    });
+});
 // routes.post('/edit',  (req, res) => {
 //   apiTrip
 //     .edit(req)
