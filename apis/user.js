@@ -85,9 +85,8 @@ module.exports = class APIUser {
       const { action, id } = req.body;
       const value = action === 'lock' ? 1 : 0;
       try {
-        const queryUpdate = await this.tramDB.runQuery(`UPDATE users SET is_locked = $1 WHERE id = $2 RETURNING users.fullname as name`, [value, id]);
+        const queryUpdate = await this.tramDB.runQuery(`UPDATE users SET is_locked = $1 WHERE id = $2 RETURNING users.username as name`, [value, id]);
 
-        console.log("🚀 ~ file: user.js:74 ~ APIUser ~ returnnewPromise ~ queryUpdate.rows:", queryUpdate.rows[0].name)
         resolve(queryUpdate.rows[0].name)
 
       } catch (e) {

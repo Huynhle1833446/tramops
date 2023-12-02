@@ -41,6 +41,12 @@ module.exports = class APIStage {
       try {
         let { fromLocation, toLocation, price } = req.body;
 
+        const checkFrom = await this.tramDB.runQuery('SELECT * FROM locations WHERE id = $1', [fromLocation]);
+        const checkTo = await this.tramDB.runQuery('SELECT * FROM locations WHERE id = $1', [toLocation]);
+
+        if(checkFrom.rowCount === 0) reject('Không tồn tại địa điểm đến!');
+        if(checkTo.rowCount === 0) reject('Không tồn tại địa điểm đi!');
+
         const queryCheck = `SELECT * FROM stages WHERE from_location_id = $1 AND to_location_id = $2`;
         const check = await this.tramDB.runQuery(queryCheck, [fromLocation, toLocation]);
 
@@ -90,53 +96,56 @@ module.exports = class APIStage {
           id: req.body.id
         }
 
-        const queryCheck = `SELECT * FROM stages WHERE id = $1`;
-        const check = await this.tramDB.runQuery(queryCheck, [newStage.id]);
+        const checkFrom = await this.tramDB.runQuery('SELECT * FROM locations WHERE id = $1', [newStage. from_location_id]);
+        const checkTo = await this.tramDB.runQuery('SELECT * FROM locations WHERE id = $1', [newStage.to_location_id]);
 
-        if (check.rowCount > 0) {
+        if(checkFrom.rowCount === 0) reject('Không tồn tại địa điểm đến!');
+        if(checkTo.rowCount === 0) reject('Không tồn tại địa điểm đi!');
 
-          const queryCheck = `SELECT * FROM stages WHERE from_location_id = $1 AND to_location_id = $2`;
+        const queryCheck = `SELECT * FROM stages WHERE from_location_id = $1 AND to_location_id = $2`;
         const check = await this.tramDB.runQuery(queryCheck, [newStage.from_location_id, newStage.to_location_id]);
 
         if (check.rowCount) reject('Đã tồn tại chặng xe này rồi!');
         else {
+          console.log('1', newStage.from_location_id, newStage.to_location_id, newStage.price, newStage.id)
+          const queryCreate = 'UPDATE stages SET from_location_id = $1, to_location_id = $2, price = $3 WHERE id = $4 RETURNING *';
+          try {
+            const stage =  await this.tramDB.runQuery(queryCreate, [newStage.from_location_id, newStage.to_location_id, newStage.price, newStage.id]);
+             resolve({msg: `Đã cập nhật thành công tuyến xe #${stage.rows[0].id}`});
+          } catch (error) {
+            reject(error)
+          }
 
-          const queryUpdate = `UPDATE stages SET car_id = $1, from_location_id = $2, to_location_id = $3, price = $4 WHERE id = $8 RETURNING id as key`;
-          const update = await this.tramDB.runQuery(queryUpdate, [newStage.car_id, newStage.from_location_id, newStage.to_location_id, newStage.price, newStage.id]);
-          resolve(update.rows[0]?.key || update.rows[0]?.id);
-        }
-        } else {
-          reject('Không tồn tại tuyến xe này!')
         }
       } catch (error) {
         reject(error);
       }
     })
   }
-  edit = async(req) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const newCar = {
-          name: req.body.name,
-          number_plate: req.body.number_plate,
-          id: req.body.id
-        }
+  // edit = async(req) => {
+  //   return new Promise(async (resolve, reject) => {
+  //     try {
+  //       const newCar = {
+  //         name: req.body.name,
+  //         number_plate: req.body.number_plate,
+  //         id: req.body.id
+  //       }
         
-        const queryCheck = `SELECT * FROM cars WHERE id = $1`;
-        const check = await this.tramDB.runQuery(queryCheck, [newCar.id]);
+  //       const queryCheck = `SELECT * FROM cars WHERE id = $1`;
+  //       const check = await this.tramDB.runQuery(queryCheck, [newCar.id]);
 
-        if (check.rowCount > 0) {
-          const queryUpdate = `UPDATE cars SET name = $1, number_plate = $2 WHERE id = $3 RETURNING id as key`;
-          const update = await this.tramDB.runQuery(queryUpdate, [newCar.name, newCar.number_plate, newCar.id]);
-          resolve(update.rows[0]?.key || update.rows[0]?.id);
-        } else {
-          reject('Không tồn tại xe này!')
-        }
-      } catch (error) {
-        reject(error);
-      }
-    })
-  } 
+  //       if (check.rowCount > 0) {
+  //         const queryUpdate = `UPDATE cars SET name = $1, number_plate = $2 WHERE id = $3 RETURNING id as key`;
+  //         const update = await this.tramDB.runQuery(queryUpdate, [newCar.name, newCar.number_plate, newCar.id]);
+  //         resolve(update.rows[0]?.key || update.rows[0]?.id);
+  //       } else {
+  //         reject('Không tồn tại xe này!')
+  //       }
+  //     } catch (error) {
+  //       reject(error);
+  //     }
+  //   })
+  // } 
 
   top = async (req) => {
     return new Promise(async (resolve, reject) => {
