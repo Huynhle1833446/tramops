@@ -101,6 +101,7 @@ module.exports = class APITrip {
  GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,stages.id,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name, t.total_slot,
         t.total_ticket, users.id
+                  ORDER BY trips.id DESC
                   OFFSET $1 ROWS 
                   LIMIT $2; `, [valueOffset, pageSize]);
 
