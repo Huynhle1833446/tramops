@@ -96,7 +96,7 @@ module.exports = class APIStage {
           id: req.body.id
         }
 
-        const checkFrom = await this.tramDB.runQuery('SELECT * FROM locations WHERE id = $1', [newStage. from_location_id]);
+        const checkFrom = await this.tramDB.runQuery('SELECT * FROM locations WHERE id = $1', [newStage.from_location_id]);
         const checkTo = await this.tramDB.runQuery('SELECT * FROM locations WHERE id = $1', [newStage.to_location_id]);
 
         if(checkFrom.rowCount === 0) reject('Không tồn tại địa điểm đến!');
@@ -107,11 +107,10 @@ module.exports = class APIStage {
 
         if (check.rowCount) reject('Đã tồn tại chặng xe này rồi!');
         else {
-          console.log('1', newStage.from_location_id, newStage.to_location_id, newStage.price, newStage.id)
           const queryCreate = 'UPDATE stages SET from_location_id = $1, to_location_id = $2, price = $3 WHERE id = $4 RETURNING *';
           try {
             const stage =  await this.tramDB.runQuery(queryCreate, [newStage.from_location_id, newStage.to_location_id, newStage.price, newStage.id]);
-             resolve({msg: `Đã cập nhật thành công tuyến xe #${stage.rows[0].id}`});
+             resolve({msg: `Đã cập nhật thành công tuyến xe #${newStage.id}`});
           } catch (error) {
             reject(error)
           }
