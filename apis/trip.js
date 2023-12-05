@@ -190,7 +190,17 @@ module.exports = class APITrip {
  GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name`;
         const list = await this.tramDB.runQuery(query, [userInfo.id]);
-        resolve(list.rows || [])
+
+        const queryStage = `SELECT s.id as key, fl.vi_name as from_location_name, tl.vi_name as to_location_name ,*
+        FROM stages s LEFT JOIN locations fl ON s.from_location_id = fl.id
+                      LEFT JOIN locations tl ON s.to_location_id = tl.id
+                      WHERE s.is_locked = 0
+        ORDER BY s.id desc `;
+        const stageData = await this.tramDB.runQuery(queryStage);
+        const listTrip = list.rows || [];
+        const listStage = stageData.rows || [];
+
+        resolve({listTrip, listStage})
       } catch (error) {
         reject(error)
       }
