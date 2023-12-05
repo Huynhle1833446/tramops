@@ -99,7 +99,7 @@ module.exports = class APIUser {
             ...user,
             imgUrl: user.imgurl ? user.imgurl : null,
             token,
-            birthday: user.date_of_birth ? moment(user.date_of_birth).format('DD/MM/YYYY') : '',
+            birthday: user.date_of_birth ? moment(user.date_of_birth).format('DD-MM-YYYY') : '',
             sex: user.gender
           }
         })
