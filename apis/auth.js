@@ -98,7 +98,9 @@ module.exports = class APIUser {
           user: {
             ...user,
             imgUrl: user.imgurl ? user.imgurl : null,
-            token
+            token,
+            birthday: moment(user.date_of_birth).format('DD/MM/YYYY'),
+            sex: user.gender
           }
         })
       } catch (error) {
