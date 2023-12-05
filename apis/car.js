@@ -78,7 +78,7 @@ module.exports = class APIUser {
   getListCarToAssign = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const userInfo = req.userInfo;
+        const userInfo = req.user;
         const query = `SELECT c.*
         FROM cars c
         LEFT JOIN users u ON c.id = u.car_id
@@ -94,7 +94,7 @@ module.exports = class APIUser {
   assign = async (req) => {
     return new Promise(async (resolve, reject) => {
       const { car, user } = req.body;
-      const userInfo = req.userInfo;
+      const userInfo = req.user;
       const carId = car.id;
       const userId = user.key;
       try {

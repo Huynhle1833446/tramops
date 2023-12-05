@@ -72,7 +72,9 @@ module.exports = class APIUser {
   login = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const { username, password } = req.body;
+        let { username, password, platform } = req.body;
+
+        platform = platform || 'mobile';
 
         if(!username || !password) reject('Vui lòng nhập đủ thông tin đăng nhập!')
         const result = await this.tramDB.runQuery(`SELECT *, image as imgUrl, last_name || ' ' || first_name as fullname FROM users WHERE username = $1`, [username]);
@@ -82,6 +84,10 @@ module.exports = class APIUser {
 
         const validPassword = await comparePasswords(password, user.password);
         if (!validPassword) reject('Sai thông tin người dùng !');
+
+        if(platform !== 'mobile' && user.role !== 'admin') {
+          reject('Bạn không phải là ADMIN !')
+        }
 
         const token = jwt.sign({ id: user.id, fullname: user.fullname, username: user.username }, process.env.JWT_SECRET);
 

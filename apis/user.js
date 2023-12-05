@@ -80,6 +80,55 @@ module.exports = class APIUser {
       }
     });
   };
+
+  splitFullName(fullName) {
+    // Split the full name into an array of words
+    const words = fullName.split(' ');
+  
+    // Check if there are at least two words (first name and last name)
+    if (words.length >= 2) {
+      const lastname = words.pop(); // Remove and get the last word as the last name
+      const firstname = words.join(' '); // The remaining words are the first name
+  
+      return {
+        firstname: firstname,
+        lastname: lastname,
+      };
+    } else {
+      // If there are not enough words, consider the entire name as the first name
+      return {
+        firstname: fullName,
+        lastname: '',
+      };
+    }
+  }
+
+  edit = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const userInfo = req.user;
+        const userId = userInfo.id;
+        const { fullname, birthday, phone, gender } = req.body;
+        
+        if(!fullname || !birthday || !phone || !gender) reject('Vui lý điền đầy đủ thông tin!')
+
+        let lastname = '';
+        let firstname = '';
+
+        if(fullname) {
+          lastname = this.splitFullName(fullname).lastname;
+          firstname = this.splitFullName(fullname).firstname;
+        }
+        
+        const query = `UPDATE users SET last_name = $1, first_name = $2, date_of_birth = $3, phone = $4, gender = $5 WHERE id = $6`;
+        await this.tramDB.runQuery(query, [lastname, firstname, birthday, phone, gender, userId]);
+
+        resolve({msg: 'Cập nhật thông tin thành công!'})
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
   lockUnlock = async (req) => {
     return new Promise(async (resolve, reject) => {
       const { action, id } = req.body;
