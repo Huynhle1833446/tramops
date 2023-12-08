@@ -116,7 +116,8 @@ module.exports = class APITicket {
          from_location.vi_name                          ,
          to_location.vi_name                            ,
          cars.name                                      ,
-         cars.number_plate;`;
+         cars.number_plate
+  ORDER BY tic.created_at DESC;`;
         const rs = await this.tramDB.runQuery(query, [userInfo.id]);
         resolve(rs.rows)
       } catch (error) {
