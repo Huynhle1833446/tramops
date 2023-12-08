@@ -119,7 +119,12 @@ module.exports = class APITicket {
          cars.number_plate
   ORDER BY tic.created_at DESC;`;
         const rs = await this.tramDB.runQuery(query, [userInfo.id]);
-        resolve(rs.rows)
+        resolve(rs.rows.length > 0 ? rs.rows.map(item => {
+          return {
+            ...item, 
+            started_at: moment(item.started_at).format('DD/MM/YYYY | HH:mm'),
+          }
+        }) : [])
       } catch (error) {
         reject(error)
       }

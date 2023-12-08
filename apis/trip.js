@@ -186,9 +186,9 @@ module.exports = class APITrip {
           LEFT JOIN locations to_location ON stages.to_location_id = to_location.id
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
-  WHERE trips.driver_id = $1
+  WHERE trips.driver_id = $1 and CAST(trips.created_at AS DATE) = CURRENT_DATE
  GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
-          cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name`;
+          cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name ORDER BY trips.created_at desc `;
         const list = await this.tramDB.runQuery(query, [userInfo.id]);
 
         const queryStage = `SELECT s.id as key, fl.vi_name as from_location_name, tl.vi_name as to_location_name ,*
@@ -222,7 +222,9 @@ module.exports = class APITrip {
         from_location.vi_name                          as from_location_name,
         to_location.vi_name                            as to_location_name,
         cars.name                                      as car_name,
-        cars.number_plate
+        cars.number_plate,
+        sum(tickets.count_slot) as slot_booking,
+        trips.count_slot - sum(tickets.count_slot) as slot_remain
  FROM trips
           LEFT JOIN stages ON trips.stage_id = stages.id
           LEFT JOIN users ON trips.driver_id = users.id
@@ -230,10 +232,10 @@ module.exports = class APITrip {
           LEFT JOIN locations to_location ON stages.to_location_id = to_location.id
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
-  WHERE DATE(trips.started_at) = $1 AND stages.from_location_id = $2 AND stages.to_location_id = $3
+  WHERE DATE(trips.created_at) = $1 AND stages.from_location_id = $2
  GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name`;
-          const rs = await this.tramDB.runQuery(query, [started_at, from_location_id, to_location_id])
+          const rs = await this.tramDB.runQuery(query, [started_at, from_location_id])
 
           resolve(rs.rows)
       } catch (error) {
