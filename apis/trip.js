@@ -77,6 +77,7 @@ module.exports = class APITrip {
         const list = await this.tramDB.runQuery(`SELECT trips.id                                       as key,
         trips.status,
         trips.started_at,
+        trips.moved_at,
         trips.finished_at,
         trips.count_slot                               as total_slot_trip,
         trips.created_at,
@@ -100,7 +101,7 @@ module.exports = class APITrip {
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
           LEFT JOIN (SELECT tc.trip_id, sum(count_slot) as total_slot, count(id) as total_ticket  FROM tickets tc GROUP BY tc.trip_id) t ON t.trip_id = trips.id
- GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,stages.id,
+ GROUP BY trips.id, stages.price, trips.started_at,trips.moved_at, trips.count_slot, trips.created_at, from_location.vi_name,stages.id,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name, t.total_slot,
         t.total_ticket, users.id
                   ORDER BY trips.id DESC
@@ -169,6 +170,7 @@ module.exports = class APITrip {
         const query = `SELECT trips.id                                       as key,
         trips.status,
         trips.started_at,
+        trips.moved_at,
         trips.count_slot                               as total_slot_trip,
         trips.created_at,
         trips.finished_at,
@@ -192,7 +194,7 @@ module.exports = class APITrip {
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
   WHERE trips.driver_id = $1 and CAST(trips.created_at AS DATE) = CURRENT_DATE
- GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
+ GROUP BY trips.id, stages.price, trips.started_at,trips.moved_at, trips.count_slot, trips.created_at, from_location.vi_name,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name,
           stop_location.vi_name, stop_location.id
   ORDER BY trips.created_at desc `;
@@ -221,6 +223,7 @@ module.exports = class APITrip {
         const query = `SELECT trips.id                                       as key,
         trips.status,
         trips.started_at,
+        trips.moved_at,
         trips.count_slot                               as total_slot_trip,
         trips.created_at,
         stages.price                                   as price,
@@ -246,7 +249,8 @@ module.exports = class APITrip {
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
   WHERE DATE(trips.started_at) = $1 AND stages.from_location_id = $2 and trips.status = 'new'
- GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
+ GROUP BY trips.id, stages.price, trips.started_at,
+          trips.moved_at, trips.count_slot, trips.created_at, from_location.vi_name,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name`;
           const rs = await this.tramDB.runQuery(query, [started_at, from_location_id])
 
