@@ -99,16 +99,16 @@ routes.post('/customer/info',  (req, res) => {
       res.status(400).send({ success: false, error: e });
     });
 });
-// routes.post('/edit',  (req, res) => {
-//   apiTrip
-//     .edit(req)
-//     .then((data) => {
-//       res.status(200).send({ success: true, data: data });
-//     })
-//     .catch((e) => {
-//       res.status(400).send({ success: false, error: e });
-//     });
-// });
+routes.post('/stop/location',  (req, res) => {
+  apiTrip
+    .stopLocation(req)
+    .then((data) => {
+      res.status(200).send({ success: true, data: data });
+    })
+    .catch((e) => {
+      res.status(400).send({ success: false, error: e });
+    });
+});
 
 module.exports = routes
 

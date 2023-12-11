@@ -93,7 +93,9 @@ module.exports = class APITicket {
         from_location.vi_name                          as from_location_name,
         to_location.vi_name                            as to_location_name,
         cars.name                                      as car_name,
-        cars.number_plate
+        cars.number_plate,
+        stop_location.id as stop_location_id,
+        stop_location.vi_name as stop_location_name
  FROM tickets tic
           LEFT JOIN users cus on cus.id = tic.customer_id
           LEFT JOIN users dri on dri.id = tic.driver_id
@@ -102,6 +104,7 @@ module.exports = class APITicket {
           LEFT JOIN users ON trips.driver_id = users.id
           LEFT JOIN locations from_location ON stages.from_location_id = from_location.id
           LEFT JOIN locations to_location ON stages.to_location_id = to_location.id
+          LEFT JOIN locations stop_location ON trips.location_stop_id = stop_location.id
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
  WHERE tic.customer_id = $1
@@ -116,7 +119,9 @@ module.exports = class APITicket {
          from_location.vi_name                          ,
          to_location.vi_name                            ,
          cars.name                                      ,
-         cars.number_plate
+         cars.number_plate,
+         stop_location.id,
+         stop_location.vi_name
   ORDER BY tic.created_at DESC;`;
         const rs = await this.tramDB.runQuery(query, [userInfo.id]);
         resolve(rs.rows.length > 0 ? rs.rows.map(item => {

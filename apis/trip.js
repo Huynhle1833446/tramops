@@ -12,7 +12,9 @@ module.exports = class APITrip {
   create = async (req) => {
     return new Promise(async (resolve, reject) => {
       try {
-        let { stageId, countSlot, driverId, startTime } = req.body;
+        let { stageId, countSlot, driverId, startTime, flatform } = req.body;
+
+        flatform = flatform || 'web';
 
         const userInfo = req.user;
 
@@ -25,7 +27,7 @@ module.exports = class APITrip {
         if (!checkDriver.rowCount) reject("Không tồn tại tài xế này!")
 
         else {
-          const trip = await this.tramDB.runQuery('INSERT INTO trips (stage_id, driver_id, count_slot, started_at) VALUES ($1, $2, $3, $4) RETURNING *', [stageId, driverId, countSlot, moment(startTime).format('YYYY-MM-DD HH:mm:ss')]);
+          const trip = await this.tramDB.runQuery('INSERT INTO trips (stage_id, driver_id, count_slot, started_at) VALUES ($1, $2, $3, $4) RETURNING *', [stageId, driverId, countSlot, flatform === 'mobile' ?  moment(startTime, 'DD-MM-YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss') : moment(startTime).format('YYYY-MM-DD HH:mm:ss')]);
           resolve({msg: `Đã thêm thành công chuyến xe #${trip.rows[0].id}`});
         }
       } catch (e) {
@@ -178,17 +180,22 @@ module.exports = class APITrip {
         cars.name                                      as car_name,
         cars.number_plate,
         count(tickets.id) as total_ticket,
-        sum(tickets.count_slot) as total_slot_ticket
+        sum(tickets.count_slot) as total_slot_ticket,
+        stop_location.id as stop_location_id,
+        stop_location.vi_name as stop_location_name
  FROM trips
           LEFT JOIN stages ON trips.stage_id = stages.id
           LEFT JOIN users ON trips.driver_id = users.id
           LEFT JOIN locations from_location ON stages.from_location_id = from_location.id
           LEFT JOIN locations to_location ON stages.to_location_id = to_location.id
+          LEFT JOIN locations stop_location ON trips.location_stop_id = stop_location.id
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
   WHERE trips.driver_id = $1 and CAST(trips.created_at AS DATE) = CURRENT_DATE
  GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
-          cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name ORDER BY trips.created_at desc `;
+          cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name,
+          stop_location.vi_name, stop_location.id
+  ORDER BY trips.created_at desc `;
         const list = await this.tramDB.runQuery(query, [userInfo.id]);
 
         const queryStage = `SELECT s.id as key, fl.vi_name as from_location_name, tl.vi_name as to_location_name ,*
@@ -223,8 +230,14 @@ module.exports = class APITrip {
         to_location.vi_name                            as to_location_name,
         cars.name                                      as car_name,
         cars.number_plate,
-        sum(tickets.count_slot) as slot_booking,
-        trips.count_slot - sum(tickets.count_slot) as slot_remain
+        CASE 
+            WHEN sum(tickets.count_slot) IS NULL THEN 0
+            ELSE sum(tickets.count_slot)
+        END as slot_booking,
+        trips.count_slot - CASE 
+            WHEN sum(tickets.count_slot) IS NULL THEN 0
+            ELSE sum(tickets.count_slot)
+        END as slot_remain
  FROM trips
           LEFT JOIN stages ON trips.stage_id = stages.id
           LEFT JOIN users ON trips.driver_id = users.id
@@ -232,7 +245,7 @@ module.exports = class APITrip {
           LEFT JOIN locations to_location ON stages.to_location_id = to_location.id
           LEFT JOIN cars ON users.car_id = cars.id
           LEFT JOIN tickets ON tickets.trip_id = trips.id
-  WHERE DATE(trips.created_at) = $1 AND stages.from_location_id = $2
+  WHERE DATE(trips.started_at) = $1 AND stages.from_location_id = $2 and trips.status = 'new'
  GROUP BY trips.id, stages.price, trips.started_at, trips.count_slot, trips.created_at, from_location.vi_name,
           cars.number_plate, stages.created_at, users.first_name, users.last_name, to_location.vi_name, cars.name`;
           const rs = await this.tramDB.runQuery(query, [started_at, from_location_id])
@@ -339,6 +352,38 @@ module.exports = class APITrip {
       }
     });
   };
+
+  stopLocation = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let {location_id, trip_id} = req.body;
+        
+        if(!location_id || !trip_id) {
+          reject('Vui lòng truyền đủ tham số !')
+        }
+
+        const checkLocationQuery = `SELECT id FROM locations WHERE id = $1`;
+        const checkTripQuery = `SELECT id FROM trips WHERE id = $1`;
+
+        const checkLocation = await this.tramDB.runQuery(checkLocationQuery, [location_id]);
+        const checkTrip = await this.tramDB.runQuery(checkTripQuery, [trip_id]);
+        
+        if(checkLocation.rows.length === 0) {
+          reject('Không tồn tại điểm dừng này!');
+        }
+
+        if(checkTrip.rows.length === 0) {
+          reject('Không tồn tại chuyến xe này!');
+        }
+
+        await this.tramDB.runQuery(`UPDATE trips SET location_stop_id = $1 WHERE id = $2`, [location_id, trip_id]);
+        resolve({msg: 'Điểm dừng đã được ghi nhận!'})
+
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
 
   // edit = async (req) => {
   //   return new Promise(async (resolve, reject) => {
