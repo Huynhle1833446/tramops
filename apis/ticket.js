@@ -125,7 +125,7 @@ module.exports = class APITicket {
          cars.number_plate,
          stop_location.id,
          stop_location.vi_name
-  ORDER BY tic.created_at DESC;`;
+  ORDER BY tic.created_at DESC LIMIT 10;`;
         const rs = await this.tramDB.runQuery(query, [userInfo.id]);
         resolve(rs.rows.length > 0 ? rs.rows.map(item => {
           return {
@@ -139,6 +139,18 @@ module.exports = class APITicket {
     })
   }
 
+  delete = async (req) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const { ticket_id } = req.body;
+        const query = `DELETE FROM tickets WHERE id = $1`;
+        await this.tramDB.runQuery(query, [ticket_id]);
+        resolve({msg: 'Đã xoá vé thành công.', ticket_id});
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
 
   // lockUnlock = async (req) => {
   //   return new Promise(async (resolve, reject) => {

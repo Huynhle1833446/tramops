@@ -36,6 +36,16 @@ routes.post('/myself',  (req, res) => {
       res.status(400).send({ success: false, error: e });
     });
 });
+routes.post('/delete',  (req, res) => {
+  apiTicket
+    .delete(req)
+    .then((data) => {
+      res.status(200).send({ success: true, data: data });
+    })
+    .catch((e) => {
+      res.status(400).send({ success: false, error: e });
+    });
+});
 
 // routes.post('/lockUnlock',  (req, res) => {
 //   apiTicket
